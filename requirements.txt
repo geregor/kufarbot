@@ -1,0 +1,7 @@
+vk_api
+vk
+bs4
+boto
+pyTelegramBotApi
+fake_useragent
+pymysql
