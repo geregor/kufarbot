@@ -57,6 +57,16 @@ def main_room(message):
         bot.register_next_step_handler(msg, main_room)
         #msg = bot.send_message(user_id, "Выберите категорию.", reply_markup=kb.fisrt_but)
         #bot.register_next_step_handler(msg, waiting)
+    elif text == "Избранное":
+        with sqlite3.connect ( 'kufar.db' ) as conn :
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT what FROM favorite WHERE user_id = {user_id}")
+            qq = cursor.fetchall()
+            if qq == []:
+                msg = bot.send_message(user_id, "У вас пока нету избранных товаров!")
+                bot.register_next_step_handler(msg, main_room)
+            else:
+                print(1)
     else:
         msg = bot.send_message(user_id, "Я не понимаю, используйте клавиатуру")
         bot.register_next_step_handler(msg, main_room)
@@ -161,27 +171,27 @@ def seach_toom(message):
             r = requests.get ( link + "&start=" + str ( call ) )
             call += 50
             soup = BS ( r.content , 'html.parser' )
-            for b in soup.findAll ( 'h2' , class_='wraptxt' ) :
-                for a in b.findAll ( 'a' ) :
-                    mass.append ( 'https://baraholka.onliner.by' + a.get ( 'href' ) )
+            for q in soup.findAll('tr'):
 
-        for i in mass :
-            r = requests.get ( i )
-            soup = BS ( r.content , 'html.parser' )
+                for o in q.findAll('td', class_='frst ph colspan'):
+                    for b in o.findAll ( 'h2' , class_='wraptxt' ) :
+                        for a in b.findAll ( 'a' ) :
+                            klink =  a.get ( 'href' )
+                            opis = a.text
 
-            for k in soup.findAll ( 'li' , class_='price-primary' ) :
-                bam = re.split ( r',' , k.text ) [ 0 ]
-                if int(sum[0]) <= int(bam) <= int(sum[1]):
-                    print(k.text)
-                    print(i)
-                    for b in soup.findAll('h1', class_='m-title-i title'):
-                        man = b.text
-                    red = i+"\nЦена "+k.text+"\n"+b.text
-                    massiv.append(red)
+                            for b in q.findAll('div', class_='price-primary'):
+                                man = re.split ( r',' , b.text ) [ 0 ]
+                                man = man.replace(' ', '')
+                                if int ( sum [ 0 ] ) <= int ( man ) <= int ( sum [ 1 ] ) :
+                                    red = "https://baraholka.onliner.by"+klink+"\nЦена "+b.text+"\n"+opis
+                                    #print(red)
+                                    massiv.append(red)
 
         red = bot.send_message(user_id, massiv[0], reply_markup=kb.butt)
         message_id = red.message_id
         pos[user_id] = 1
+
+
 
 @bot.callback_query_handler ( func=lambda call : True )
 def get_call(call) :
@@ -192,14 +202,36 @@ def get_call(call) :
         bot.register_next_step_handler(msg, main_room)
     elif 'd' in call.data:
         try:
+            pos [ user_id ] += 1
             bot.edit_message_text(chat_id=user_id, message_id=message_id, text=massiv [ pos [ user_id  ] ])
             bot.edit_message_reply_markup(chat_id=user_id, message_id=message_id, reply_markup=kb.butt)
-            pos[user_id] += 1
         except IndexError:
-            pos [ user_id ] = 0
+            pos [ user_id ] = 1
             bot.send_message(user_id, "Товары в данной ценовой категории закончились")
             bot.send_message ( user_id , massiv [ pos [ user_id  ] ] , reply_markup=kb.butt )
-
+    elif 'n' in call.data:
+        try:
+            pos [ user_id ] -= 1
+            bot.edit_message_text(chat_id=user_id, message_id=message_id, text=massiv [ pos [ user_id  ] ])
+            bot.edit_message_reply_markup ( chat_id=user_id , message_id=message_id , reply_markup=kb.butt )
+        except IndexError:
+            pos [ user_id ] = 1
+            bot.send_message(user_id, "Здесь нету товара")
+            bot.send_message ( user_id , massiv [ pos [ user_id  ] ] , reply_markup=kb.butt )
+    elif 'is' in call.data:
+        with sqlite3.connect ( 'kufar.db' ) as conn :
+            cursor = conn.cursor ()
+            cursor.execute ( f"SELECT what FROM favorite WHERE user_id={user_id}" )
+            qq = cursor.fetchall ()
+            madiv = []
+            for k in qq:
+                madiv.append(k[0])
+            if massiv[pos[user_id]] not in madiv:
+                cursor.execute (f"INSERT INTO favorite (user_id,what) VALUES ({user_id}, '{massiv [ pos [ user_id ] ]}')" )
+                bot.send_message ( user_id , "Товар добавлен в избранное")
+            else:
+                bot.send_message ( user_id , "Данный товар уже находится в избранных" )
+            conn.commit()
 def waiting(message):
     user_id = message.chat.id
     text = message.text
