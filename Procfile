@@ -1,1 +1,1 @@
-worker: python main3.py
+worker: python abrakadabra.py
