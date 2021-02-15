@@ -10,6 +10,10 @@ import sqlite3
 mass = []
 massiv = []
 pos = {}
+mos = {}
+kos = {}
+moos = []
+los = {}
 conn = sqlite3.connect('kufar.db')
 bot = telebot.TeleBot("1685702621:AAGr22uWJGIgC-40uVp3q0ayfpxpFNgLy1Q")
 message_id = 0
@@ -62,14 +66,21 @@ def main_room(message):
             cursor = conn.cursor()
             cursor.execute(f"SELECT what FROM favorite WHERE user_id = {user_id}")
             qq = cursor.fetchall()
+            mos[user_id] = 0
             if qq == []:
                 msg = bot.send_message(user_id, "У вас пока нету избранных товаров!")
                 bot.register_next_step_handler(msg, main_room)
             else:
-                print(1)
+                
+                for k in qq:
+                    moos.append(k[0])
+            num = len(moos)
+            msg = bot.send_message(user_id, "Найдено "+str(num)+" в избранном\n"+str(mos[user_id]+1)+". "+str(moos[mos[user_id]]), reply_markup=kb.buut)
+            kos[user_id]=msg.message_id
     else:
         msg = bot.send_message(user_id, "Я не понимаю, используйте клавиатуру")
         bot.register_next_step_handler(msg, main_room)
+
 
 def find_1(message):
     user_id = message.chat.id
@@ -160,8 +171,8 @@ def seach_toom(message):
             b = b.replace ( ' объявлений)' , '' )
             b = b.replace ( ' объявления)' , '' )
             b = b.replace ( ' объявление)' , '' )
-
-        bot.send_message(user_id, "Найдено " + b + " новых товаров за 24 часа" )
+            kkk = b
+        #bot.send_message(user_id, "Найдено " + b + " новых товаров за 24 часа" )
         collichestvo = 0
         collichestvo = divmod ( int ( b ) , 50 ) [ 0 ]
         print ( collichestvo )
@@ -186,10 +197,10 @@ def seach_toom(message):
                                     red = "https://baraholka.onliner.by"+klink+"\nЦена "+b.text+"\n"+opis
                                     #print(red)
                                     massiv.append(red)
-
+        bot.send_message(user_id, "Найдено " + kkk + " новых товаров за 24 часа\nПо заданным фильтрам найдено "+str(len(massiv))  )   
         red = bot.send_message(user_id, massiv[0], reply_markup=kb.butt)
         message_id = red.message_id
-        pos[user_id] = 1
+        pos[user_id] = 0
 
 
 
@@ -197,10 +208,10 @@ def seach_toom(message):
 def get_call(call) :
     user_id = call.message.chat.id
     message_id = call.message.message_id
-    if 'm' in call.data :
+    if 'mm' in call.data :
         msg = bot.send_message(chat_id=user_id, text="Вы вернулись в меню.", reply_markup=kb.main)
         bot.register_next_step_handler(msg, main_room)
-    elif 'd' in call.data:
+    elif 'dd' in call.data:
         try:
             pos [ user_id ] += 1
             bot.edit_message_text(chat_id=user_id, message_id=message_id, text=massiv [ pos [ user_id  ] ])
@@ -209,7 +220,7 @@ def get_call(call) :
             pos [ user_id ] = 1
             bot.send_message(user_id, "Товары в данной ценовой категории закончились")
             bot.send_message ( user_id , massiv [ pos [ user_id  ] ] , reply_markup=kb.butt )
-    elif 'n' in call.data:
+    elif 'nn' in call.data:
         try:
             pos [ user_id ] -= 1
             bot.edit_message_text(chat_id=user_id, message_id=message_id, text=massiv [ pos [ user_id  ] ])
@@ -232,6 +243,57 @@ def get_call(call) :
             else:
                 bot.send_message ( user_id , "Данный товар уже находится в избранных" )
             conn.commit()
+
+    elif 'nf' in call.data:
+        if mos[user_id] != 0:
+            try:
+                mos[user_id] -= 1
+                message_id = kos[user_id]
+                bot.edit_message_text(chat_id=user_id, message_id=message_id, text=str(mos[user_id]+1)+". "+str(moos[mos[user_id]]))
+                bot.edit_message_reply_markup(chat_id=user_id, message_id=message_id , reply_markup=kb.buut)
+            except:
+                bot.send_message(user_id,"Произошло недопонимание №254")
+        else:
+            bot.send_message(user_id, "Тут нет ничего!")
+
+    elif 'yd' in call.data:
+        with sqlite3.connect ( 'kufar.db' ) as conn :
+            cursor = conn.cursor ()
+            cursor.execute(f"DELETE FROM favorite WHERE what ='{moos[mos[user_id]]}'")
+            conn.commit()
+            print(len(moos))
+            if len(moos) < 1: #1
+                msg = bot.send_message(user_id, "Данный товар удален из списка избранных. В избранных больше нету товаров!", kb.main)
+                moos.pop(mos[user_id])
+                bot.register_next_step_handler(msg, main_room)
+            elif (mos[user_id]+1) == len(moos):
+                bot.send_message(user_id, "Данный товар удален из списка избранных. #2")
+                moos.pop(mos[user_id])
+                mos[user_id] -= 1
+                bot.edit_message_text(chat_id=user_id, message_id=message_id, text=str(mos[user_id]+1)+". "+str(moos[mos[user_id]]))
+                bot.edit_message_reply_markup(chat_id=user_id, message_id=message_id , reply_markup=kb.buut)
+            elif (mos[user_id]+1) == 1:
+                moos.pop(mos[user_id])
+                bot.send_message(user_id, "Данный товар удален из списка избранных. #3")
+                mos[user_id] += 1
+                bot.edit_message_text(chat_id=user_id, message_id=message_id, text=str(mos[user_id]+1)+". "+str(moos[mos[user_id]]))
+                bot.edit_message_reply_markup(chat_id=user_id, message_id=message_id , reply_markup=kb.buut)
+            else:
+                moos.pop(mos[user_id])
+                bot.send_message(user_id, "Данный товар удален из списка избранных. #4")
+                mos[user_id] -= 1
+                bot.edit_message_text(chat_id=user_id, message_id=message_id, text=str(mos[user_id]+1)+". "+str(moos[mos[user_id]]))
+                bot.edit_message_reply_markup(chat_id=user_id, message_id=message_id , reply_markup=kb.buut)
+
+    elif 'df' in call.data:
+        if (mos[user_id]+1) != (len(moos)):
+            mos[user_id] += 1
+            message_id = kos[user_id]
+            bot.edit_message_text(chat_id=user_id, message_id=message_id, text=str(mos[user_id]+1)+". "+str(moos[mos[user_id]]))
+            bot.edit_message_reply_markup(chat_id=user_id, message_id=message_id , reply_markup=kb.buut)
+        else:
+            bot.send_message(user_id, "Тут нет ничего!")
+
 def waiting(message):
     user_id = message.chat.id
     text = message.text

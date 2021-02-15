@@ -21,11 +21,18 @@ first_but = types.ReplyKeyboardMarkup( one_time_keyboard=True, resize_keyboard=T
 first_but.add(but_1).add(but_2).add(but_3).add(but_4).add(back_button)
 
 butt = types.InlineKeyboardMarkup()
-butt_1 = types.InlineKeyboardButton(text='Далее', callback_data='d')
-butt_2 = types.InlineKeyboardButton(text='В меню', callback_data='m')
-butt_3 = types.InlineKeyboardButton(text='Назад', callback_data='n')
+butt_1 = types.InlineKeyboardButton(text='Далее', callback_data='dd')
+butt_2 = types.InlineKeyboardButton(text='В меню', callback_data='mm')
+butt_3 = types.InlineKeyboardButton(text='Назад', callback_data='nn')
 butt_4 = types.InlineKeyboardButton(text='В избранное', callback_data='is')
 butt.add(butt_3,butt_2,butt_1).add(butt_4)
+
+buut = types.InlineKeyboardMarkup()
+buut_n = types.InlineKeyboardButton(text="Назад", callback_data='nf')
+buut_s = types.InlineKeyboardButton(text="Удалить из избранных", callback_data='yd')
+buut_d = types.InlineKeyboardButton(text="Далее", callback_data='df')
+buut.add(buut_n,butt_2,buut_d).add(buut_s)
+
 
 ww = types.ReplyKeyboardMarkup( one_time_keyboard=True, resize_keyboard=True)
 ww1 = types.KeyboardButton('')
