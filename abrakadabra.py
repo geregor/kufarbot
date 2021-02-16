@@ -53,7 +53,6 @@ def second_room(message):
 def main_room(message):
     user_id = message.chat.id
     text = message.text
-    massiv = []
     if text == "Найти халяву":
         msg = bot.send_message(user_id, "Выбери категорию для халявы", reply_markup=kb.first_but)
         bot.register_next_step_handler(msg, find_1)
@@ -212,6 +211,7 @@ def get_call(call) :
     if 'mm' in call.data :
         msg = bot.send_message(chat_id=user_id, text="Вы вернулись в меню.", reply_markup=kb.main)
         bot.register_next_step_handler(msg, main_room)
+        massiv.clear()
     elif 'dd' in call.data:
         try:
             pos [ user_id ] += 1
